@@ -1,0 +1,296 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- saved from url=(0082)http://johanneskopf.de/publications/completion/supplementary/comparison_holes.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+	<title>Predictable High-Quality Image Completion</title>
+	
+
+	<style type="text/css">
+    * {
+		margin: 0;
+    }
+    html, body {
+		height: 100%;
+    }
+	
+	body {
+		background-image: url("boundaries/bg.png");
+		overflow: hidden;
+	}
+	
+    .wrapper {
+		min-height: 100%;
+		height: auto !important;
+		height: 100%;
+		margin: 0 auto -66px;
+    }
+	
+	.push {
+	}
+	
+	.draggable
+	{
+		position: absolute;
+		z-index: 0;
+	}
+
+    .footer {
+		font-family: Arial, Helvetica, sans-serif;
+		font-size: 20px;
+		text-align: center;
+		background-color:rgba(255,255,255,0.5);
+		position: relative;
+		height: 40px;
+		width: 400px;
+		margin-left: auto;
+		margin-right: auto;
+		padding: 8px;
+		z-index: 10;
+    }
+	
+	.footer p {
+		font-size: 14px;
+	}
+	
+	.navpanel {
+		font-family: Arial, Helvetica, sans-serif;
+		text-align: center;
+		background-color:rgba(156,193,244,0.9);
+		
+		position: relative;
+		top: 0px;
+		width: 60%;
+		margin-left: auto;
+		margin-right: auto;
+		padding: 16px;
+		z-index: 10;
+                border-radius: 10px;
+	}
+	
+	.methodtable td {
+		text-align: center;
+		padding: 5px;
+	}
+
+	.navselected
+	{
+		color: #ff0000;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+	
+	.navunselected
+	{
+		color: #000000;
+		text-decoration: underline;
+		cursor: pointer;
+	}
+	</style>
+	<script type="text/javascript">
+		var isMouseDown = false;
+		var lastMouseX = 0, lastMouseY = 0;
+		var imgX = 0, imgY = 0;
+                var types = ["type1","type2"]
+		var dirs = "./";
+		var boundaryDir = "crop_mask";
+		let searchParams = (new URL(document.location)).searchParams;
+                var tag = searchParams.get('tag');
+                var type = searchParams.get('type');
+		var lockDrag = false;
+
+		function $(id)
+		{
+			return document.getElementById(id);
+		}
+		
+		function getWidth(id)
+		{
+			var w = parseInt($(id).style.width);
+			return (isNaN(w) ? 0 : w);
+		}
+	
+		function getHeight(id)
+		{
+			var h = parseInt($(id).style.height);
+			return (isNaN(h) ? 0 : h);
+		}
+	
+		function placeImage()
+		{
+            $("image").style.width = "" +"1024px";
+			$("image").style.left = ""+((window.innerWidth-$("image").width)/2 + imgX)+"px";
+			$("image").style.top = ""+((window.innerHeight-$("image").height)/2 + imgY)+"px";
+                                       
+            $("boundary").style.width = "" +"1024px";
+			$("boundary").style.left = ""+((window.innerWidth-$("boundary").width)/2 + imgX)+"px";
+			$("boundary").style.top = ""+((window.innerHeight-$("boundary").height)/2 + imgY)+"px";
+			
+			$("boundary").style.visibility = ($("boundaryCheck").checked ? "visible" : "hidden");
+		}
+
+		function changeImage()
+		{
+			for (i = 0; i < types.length; i++)
+			{
+				if (types[i] == type)
+				{				
+					$("image").src = dirs + type + '/' + tag;
+					$("image").onload = placeImage;
+					$("boundary").src = boundaryDir + '/' + tag;
+					$("boundary").onload = placeImage;
+				}
+			}
+		}
+		
+		function changeType(newType)
+		{
+			type = newType;
+						
+			for (i = 0; i < types.length; i++)
+			{
+				$("typeText_"+types[i]).className = (type == types[i] ? "navselected" : "navunselected");
+			}
+			
+			var fh = 20;
+			
+			if (type == "type1"){$("footer").innerHTML = "type1_text";}
+			else if (type == "type2"){$("footer").innerHTML = "type2_text";fh = 40;}
+        
+			$("footer").style.height = fh+"px"
+			$("wrapper").style.margin = "0 auto -"+(fh+26)+"px";
+			
+			changeImage();
+		}
+		
+		function changeTag(newTag)
+		{
+			tag = newTag;
+
+			imgX = 0;
+			imgY = 0;
+
+			changeImage();
+		}
+
+		function mouseDown(event)
+		{
+			isMouseDown = true;
+			lastMouseX = event.clientX;
+			lastMouseY = event.clientY;
+			
+			if (event.target == $("image") || event.target == $("boundary"))
+			{
+				return false;
+			}
+			
+			return true;
+		}
+		
+		function mouseUp(event)
+		{
+			isMouseDown = false;
+			lastMouseX = event.clientX;
+			lastMouseY = event.clientY;
+			
+			return false;
+		}
+		
+		function mouseMove(event)
+		{
+			if (isMouseDown && !lockDrag)
+			{
+				imgX += event.clientX-lastMouseX;
+				imgY += event.clientY-lastMouseY;
+				placeImage();
+			}
+			lastMouseX = event.clientX;
+			lastMouseY = event.clientY;
+			
+			return false;
+		}
+		
+		function keyDown(event)
+		{
+			if (event.keyCode == 38)
+			{
+				if ($("imageCombo").selectedIndex > 0)
+				{
+					$("imageCombo").selectedIndex--;
+					changeTag($("imageCombo").value);
+				}
+				return false;
+			}
+			else if (event.keyCode == 40)
+			{
+				if ($("imageCombo").selectedIndex < $("imageCombo").options.length-1)
+				{
+					$("imageCombo").selectedIndex++;
+					changeTag($("imageCombo").value);
+				}
+				return false;
+			}
+			else if (event.keyCode == 37 || event.keyCode == 39)
+			{
+				for (i = 0; i < types.length; i++)
+				{
+					if (type == types[i])
+					{
+						if (event.keyCode == 37 && i > 0)
+						{
+							changeType(types[i-1]);
+							break;
+						}
+						if (event.keyCode == 39 && i < types.length-1)
+						{
+							changeType(types[i+1]);
+							break;
+						}
+					}
+				}
+			}
+			else
+			{
+				return true;
+			}
+		}
+		
+		function init()
+		{
+			changeImage();
+		}
+		
+		document.onmousedown = mouseDown;
+		document.onmouseup = mouseUp;
+		document.onmousemove = mouseMove;
+		document.onkeydown = keyDown;
+		window.onresize = placeImage;
+	</script>
+</head>
+<body onload="init();" tabindex="-3">
+	<div id="wrapper" class="wrapper">
+		<div class="navpanel">
+			<center>
+			<select id="imageCombo" onchange="changeTag(this.value);" onmouseover="lockDrag=true;" onmouseout="lockDrag=false;" style="width: 200px;" tabindex="-2">
+				<option value="1">Sample_01</option>
+                
+            </select>&nbsp;&nbsp;&nbsp;
+			<input id="boundaryCheck" type="checkbox" onchange="placeImage();"> Show Input Boundary
+			<br>
+			<table class="methodtable">
+			<tbody><tr>
+                <td><div id="typeText_type1" class="navunselected" onmousedown="changeType(&#39;type1&#39;);">type1_text</div></td>
+		<td><div id="typeText_type2" class="navunselected" onmousedown="changeType(&#39;type2&#39;);">type2_text</div></td>
+			</tr>
+			</tbody></table>
+			<div style="color: #ee4400; font-size: 9pt; font-weight: bold;">Please drag with the left mouse button to move the image.<br>
+			Use the arrow keys to flip images and methods.</div>
+		</center></div>
+		<div class="push"></div>
+	</div>
+	<div id="footer" class="footer">
+		Input Source Image
+	</div>
+	<img id="image" class="draggable" tabindex="-4" src="" style="left: 468px; top: -84px;">
+	<img id="boundary" class="draggable" tabindex="-5" src="" style="left: 468px; top: -84px; visibility: hidden;">
+
+</body></html>
+
